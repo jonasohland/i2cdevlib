@@ -3273,7 +3273,7 @@ void MPU6050::setDMPConfig2(uint8_t config) {
 /**
   @brief      Fully calibrate Gyro from ZERO in about 6-7 Loops 600-700 readings
 */
-void MPU6050::CalibrateGyro(uint8_t Loops ) {
+void MPU6050::CalibrateGyro(uint8_t Loops, void* s, void (*prog_cb)(uint8_t, void*)) {
   double kP = 0.3;
   double kI = 90;
   float x;
@@ -3281,13 +3281,13 @@ void MPU6050::CalibrateGyro(uint8_t Loops ) {
   kP *= x;
   kI *= x;
   
-  PID( 0x43,  kP, kI,  Loops);
+  PID( 0x43,  kP, kI,  Loops, s, prog_cb);
 }
 
 /**
   @brief      Fully calibrate Accel from ZERO in about 6-7 Loops 600-700 readings
 */
-void MPU6050::CalibrateAccel(uint8_t Loops ) {
+void MPU6050::CalibrateAccel(uint8_t Loops, void* s, void (*prog_cb)(uint8_t, void*)) {
 
 	float kP = 0.3;
 	float kI = 20;
@@ -3295,10 +3295,10 @@ void MPU6050::CalibrateAccel(uint8_t Loops ) {
 	x = (100 - map(Loops, 1, 5, 20, 0)) * .01;
 	kP *= x;
 	kI *= x;
-	PID( 0x3B, kP, kI,  Loops);
+	PID(0x3B, kP, kI, Loops, s, prog_cb);
 }
 
-void MPU6050::PID(uint8_t ReadAddress, float kP,float kI, uint8_t Loops){
+void MPU6050::PID(uint8_t ReadAddress, float kP,float kI, uint8_t Loops, void* s, void (*prog_cb)(uint8_t, void*)){
 	uint8_t SaveAddress = (ReadAddress == 0x3B)?((getDeviceID() < 0x38 )? 0x06:0x77):0x13;
 
 	int16_t  Data;
@@ -3308,7 +3308,7 @@ void MPU6050::PID(uint8_t ReadAddress, float kP,float kI, uint8_t Loops){
 	float Error, PTerm, ITerm[3];
 	int16_t eSample;
 	uint32_t eSum ;
-	Serial.write('>');
+	// Serial.write('>');
 	for (int i = 0; i < 3; i++) {
 		I2Cdev::readWords(devAddr, SaveAddress + (i * shift), 1, (uint16_t *)&Data); // reads 1 or more 16 bit integers (Word)
 		Reading = Data;
@@ -3339,13 +3339,14 @@ void MPU6050::PID(uint8_t ReadAddress, float kP,float kI, uint8_t Loops){
 			}
 			if((c == 99) && eSum > 1000){						// Error is still to great to continue 
 				c = 0;
-				Serial.write('*');
+				// Serial.write('*');
 			}
 			if((eSum * ((ReadAddress == 0x3B)?.05: 1)) < 5) eSample++;	// Successfully found offsets prepare to  advance
 			if((eSum < 100) && (c > 10) && (eSample >= 10)) break;		// Advance to next Loop
 			delay(1);
 		}
-		Serial.write('.');
+		// Serial.write('.');
+        prog_cb(L, s);
 		kP *= .75;
 		kI *= .75;
 		for (int i = 0; i < 3; i++){

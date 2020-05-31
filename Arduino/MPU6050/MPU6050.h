@@ -822,9 +822,9 @@ class MPU6050 {
         void setDMPConfig2(uint8_t config);
 
 		// Calibration Routines
-		void CalibrateGyro(uint8_t Loops = 15); // Fine tune after setting offsets with less Loops.
-		void CalibrateAccel(uint8_t Loops = 15);// Fine tune after setting offsets with less Loops.
-		void PID(uint8_t ReadAddress, float kP,float kI, uint8_t Loops);  // Does the math
+		void CalibrateGyro(uint8_t Loops, void*, void (*)(uint8_t, void*)); // Fine tune after setting offsets with less Loops.
+		void CalibrateAccel(uint8_t Loops, void*, void (*)(uint8_t, void*));// Fine tune after setting offsets with less Loops.
+		void PID(uint8_t ReadAddress, float kP,float kI, uint8_t Loops, void*, void (*)(uint8_t, void*));  // Does the math
 		void PrintActiveOffsets(); // See the results of the Calibration
 
 
